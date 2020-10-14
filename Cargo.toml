@@ -1,9 +1,10 @@
 [package]
 name = "rust-youtube-dl"
 version = "0.1.0"
-authors = ["Coska"]
+authors = ["Sean Moon <smoon@freshbooks.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+url = "2.1.1"
