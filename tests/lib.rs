@@ -1,9 +1,18 @@
 #[cfg(test)]
 mod tests {
     #[test]
+    fn regex_youtube_match() {
+        use regex::Regex;
+        let url = "https://youtube.com/video-id";
+        let re = Regex::new(r"^.*(?:(?:youtu(?:\.be|be\.com)/|v/|vi/|u/w/|embed/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*").unwrap();
+        assert!(re.is_match("https://youtube.com/video-id"));
+        assert!(re.is_match(url));
+    }
+
+    #[test]
     fn valid_url() {
-        let test_valid_url = "https://youtu.be/test-id";
-        let parsed_url = rust_youtube_dl::parse_url(&test_valid_url);
+        let test_valid_url = "https://youtube.com/test-id";
+        let parsed_url = rust_youtube_dl::parse_url(test_valid_url);
         assert_eq!(parsed_url.host_str(), Some("youtube.com"));
     }
 
@@ -11,7 +20,7 @@ mod tests {
     #[should_panic]
     fn invalid_url() {
         let test_invalid_url = "Test Fail Wrong";
-        let _parsed_url = rust_youtube_dl::parse_url(&test_invalid_url);
+        let _parsed_url = rust_youtube_dl::parse_url(test_invalid_url);
     }
 
     #[test]
