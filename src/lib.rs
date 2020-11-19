@@ -1,7 +1,7 @@
 use url::Url;
 use regex::Regex;
-use reqwest::blocking::{Client, Response};
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, CONTENT_TYPE, USER_AGENT};
+use reqwest::blocking::Client;
+use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 
 pub fn parse_url(url_str: &str) -> Url {
     let re = Regex::new(r"^.*(?:(?:youtu(?:\.be|be\.com)/|v/|vi/|u/w/|embed/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*").unwrap();
@@ -32,10 +32,10 @@ pub fn download_webpage(url: &str) -> String{
     res
 }
 
-pub fn get_ytplayer_config(webpage_contents: String) {
+pub fn get_ytplayer_config(webpage_contents: String) -> String {
     let patterns = [
-        r";ytplayer\.config\s*=\s*({.+?});ytplayer",
-        r";ytplayer\.config\s*=\s*({.+?});",
+        r";ytplayer\.config\s*=\s*(\{.+?\});ytplayer",
+        r";ytplayer\.config\s*=\s*(\{.+?\});",
     ];
 
     let mut ytplayer_config = "";
@@ -43,12 +43,9 @@ pub fn get_ytplayer_config(webpage_contents: String) {
     for pattern in patterns.iter() {
         let re = Regex::new(pattern).unwrap();
         for captured in re.captures_iter(webpage_contents.as_str()) {
-            println!("{}", &captured[0]);
+            ytplayer_config = captured.get(1).unwrap().as_str();
             break;
-            //ytplayer_config = &captured[0];
         }
     }
-
+    ytplayer_config.to_string()
 }
-
-
