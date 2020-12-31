@@ -24,7 +24,11 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
     fn invalid_youtube_url() {
+        let test_invalid_url = "https://youtube.com/invalid-video-id";
+        let _parsed_url = rust_youtube_dl::parse_url(test_invalid_url);
+        rust_youtube_dl::download_webpage(_parsed_url.as_str());
         assert!(true);
     }
 
