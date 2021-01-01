@@ -2,8 +2,10 @@ use std::cell::RefCell;
 use url::Url;
 use json::JsonValue;
 use regex::Regex;
-use reqwest::blocking::Client;
+use reqwest::blocking::{Client, Response};
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
+use std::fs::File;
+use std::io::prelude::*;
 
 pub struct StreamingData {
     itag: u16,
@@ -17,7 +19,7 @@ pub struct VideoInfo {
     pub title: String,
     description: String,
     author: String,
-    streaming_data: RefCell<Vec<StreamingData>>
+    pub streaming_data: RefCell<Vec<StreamingData>>
 }
 
 impl VideoInfo {
@@ -121,6 +123,43 @@ pub fn extract_video_data(player_config: JsonValue) -> VideoInfo {
     video_info
 }
 
+pub fn download_video_file(video_title: &str, video_data: &StreamingData) {
+    let mut headers = HeaderMap::new();
+    headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36"));
+
+    let client: Client = reqwest::blocking::Client::new();
+    println!("Downloading video {}", video_title);
+    let res = match client.get(&video_data.url)
+            .headers(headers)
+            .send() {
+                Ok(response) => response,
+                Err(error) => panic!(error),
+            };
+    let extension = get_video_extension(video_data.mime_type.as_str());
+    let filename = match extension {
+        Some(ext) => format!("{}.{}", video_title, ext),
+        None => String::from(video_title),
+    };
+    write_to_file(filename.as_str(), res);
+}
+
+fn write_to_file(filename: &str, mut response: Response) {
+    let mut buffer = [0; 128 * 1024];
+    let mut file_handler = File::create(filename).unwrap();
+    loop {
+        match response.read(&mut buffer) {
+            Ok(len) => {
+                file_handler.write_all(&buffer[..len]).unwrap();
+                if len == 0 {
+                    break;
+                }
+                len
+            }
+            Err(error) => panic!("{}", error),
+        };
+    }
+}
+
 fn extract_streaming_data(streaming_format: &JsonValue, video_info: &VideoInfo) {
     video_info.append_streaming_data(
         StreamingData {
@@ -132,17 +171,8 @@ fn extract_streaming_data(streaming_format: &JsonValue, video_info: &VideoInfo) 
     );
 }
 
-fn download_video_file(video_title: &str, video_data: &StreamingData) {
-    let mut headers = HeaderMap::new();
-    headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36"));
-
-    let client: Client = reqwest::blocking::Client::new();
-    let content_length = video_data.content_length;
-    println!("Downloading video {}", video_title);
-    let res = match client.get(&video_data.url)
-            .headers(headers)
-            .send() {
-                Ok(response) => response,
-                Err(error) => panic!(error),
-            };
+fn get_video_extension(mime_type: &str) -> Option<&str> {
+    mime_type.split(';')
+    .next()
+    .and_then(|ext| ext.split('/').nth(1))
 }

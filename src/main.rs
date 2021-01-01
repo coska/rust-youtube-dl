@@ -3,7 +3,8 @@ use rust_youtube_dl::{
   parse_url, 
   download_webpage, 
   get_ytplayer_config,
-  extract_video_data
+  extract_video_data,
+  download_video_file
 };
 use json;
 /*
@@ -17,5 +18,5 @@ fn main() {
     let player_config = get_ytplayer_config(contents).unwrap();
     let parsed_config = json::parse(&player_config).unwrap();
     let video_info = extract_video_data(parsed_config);
-    println!("{}", video_info.title)
+    download_video_file(video_info.title.as_str(), video_info.streaming_data.borrow().get(0).unwrap());
 }
